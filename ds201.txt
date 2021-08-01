@@ -119,3 +119,27 @@ without any warmup using:
 ./cassandra-stress write n=50000 no-warmup -rate threads=1
 
 
+nodetool flush
+
+Initially, we will see a long list of setting for the stress run. As Apache Cassandra™ stress
+executes, it logs several statistics to the terminal. Each line displays the statistics for the
+operations that occurred each second and shows number of partitions written, operations per
+second, latency information, and more.
+
+The flush command commits all written (memtable, discussed later) data to disk. Unlike
+drain, flush allows further writes to occur.
+
+inside cqlsh:
+
+DESCRIBE KEYSPACES;
+
+USE keyspace1;
+
+DESCRIBE TABLES;
+
+SELECT *
+FROM standard1
+LIMIT 5;
+
+
+
