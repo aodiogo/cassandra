@@ -159,4 +159,45 @@ disk space usage. Owns indicates how many tokens this node is responsible for (i
 only node in the ring at the moment). Token should be 0 (the same value set in the
 cassandra.yaml file). We discuss racks later in the course.
 
+In cqlsh:
+
+CREATE KEYSPACE killrvideo
+WITH replication = {'class': 'SimpleStrategy',
+'replication_factor': 1 };
+
+USE killrvideo;
+CREATE TABLE videos (
+ id uuid,
+ added_date timestamp,
+ title text,
+ PRIMARY KEY ((id))
+);
+COPY videos(id, added_date, title)
+FROM '/home/ubuntu/labwork/data-files/videos.csv'
+WITH HEADER=TRUE;
+CREATE TABLE videos_by_tag (
+ tag text,
+ video_id uuid,
+ added_date timestamp,
+ title text,
+ PRIMARY KEY ((tag), added_date, video_id))
+ WITH CLUSTERING ORDER BY(added_date DESC);
+
+SELECT token(tag), tag
+FROM videos_by_tag;
+
+You can refresh your memory as to which nodes own which token ranges by running the
+following in the terminal:
+/home/ubuntu/node1/resources/cassandra/bin/nodetool ring
+
+To display what node owns the partition:
+ubuntu@ds201-node1:~$ /home/ubuntu/node1/resources/cassandra/bin/nodetool getendpoints killrvideo videos_by_tag 'cassandra'
+127.0.0.2
+
+getendpoints returns the IP addresses of the node(s) which store the partitions with
+the respective partition key value (the last argument in single quotes: cassandra and
+datastax respectively). Notice we must also supply the keyspace and table name we
+are interested in since we set replication on a per-keyspace basis. There is more on
+replication to come later in this course.
+
 
