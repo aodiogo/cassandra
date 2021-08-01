@@ -1,0 +1,68 @@
+dse cassandra
+
+/home/ubuntu/node/resources/cassandra/bin/cqlsh
+
+dsetool status
+
+CREATE KEYSPACE killrvideo
+WITH replication = {
+'class':'SimpleStrategy',
+'replication_factor': 1
+};
+
+USE killrvideo;
+
+CREATE TABLE videos (
+video_id TIMEUUID,
+added_date TIMESTAMP,
+title TEXT,
+PRIMARY KEY (video_id)
+);
+
+
+INSERT INTO videos (video_id, added_date, title)
+VALUES (1645ea59-14bd-11e5-a993-8138354b7e31, '2014-01-29', 'Cassandra History');
+
+TRUNCATE videos;
+
+
+COPY videos(video_id, added_date, title)
+FROM '/home/ubuntu/labwork/data-files/videos.csv'
+WITH HEADER=TRUE;
+
+/home/ubuntu/node/bin/dsetool status
+
+SELECT token(video_id), video_id
+FROM videos;
+
+CREATE TABLE videos_by_tag (
+tag TEXT,
+video_id UUID,
+added_date TIMESTAMP,
+title TEXT,
+PRIMARY KEY ((tag), video_id)
+);
+
+CREATE TABLE videos_by_tag (
+tag text,
+video_id uuid,
+added_date timestamp,
+title text,
+PRIMARY KEY ((tag), added_date, video_id)
+) WITH CLUSTERING ORDER BY(added_date DESC) WITH HEADER = true;
+
+SELECT *
+FROM videos_by_tag
+ORDER BY added_date ASC;
+
+SELECT *
+FROM videos_by_tag
+WHERE tag = 'cassandra'
+ORDER BY added_date ASC;
+
+SELECT *
+FROM videos_by_tag
+WHERE tag = 'cassandra' and added_date >= '2013-1-1'
+ORDER BY added_date ASC;
+
+
