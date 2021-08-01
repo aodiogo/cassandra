@@ -141,5 +141,22 @@ SELECT *
 FROM standard1
 LIMIT 5;
 
+Stop the current node
+nodetool stopdaemon 
+
+Ring
+
+/home/ubuntu/node2/resources/cassandra/conf/cassandra.yaml
+
+Change initial token to
+
+initial_token: 9223372036854775807
+
+/home/ubuntu/node1/resources/cassandra/bin/nodetool status
+
+The UN indicates UP NORMAL meaning the node is ready to go. Load indicates current
+disk space usage. Owns indicates how many tokens this node is responsible for (it is the
+only node in the ring at the moment). Token should be 0 (the same value set in the
+cassandra.yaml file). We discuss racks later in the course.
 
 
