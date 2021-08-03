@@ -305,4 +305,26 @@ NOTE: nodetool displays the IP addresses of the nodes containing our data.
 Notice Apache Cassandra™ stores each replica twice, and each replica is in a different
 data center. Your results may vary due to randomness in choosing tokens for vnodes.
 
+Now check the current consistency level by executing the CONSISTENCY command as we
+have it written out for you here:
+CONSISTENCY;
+
+Notice that consistency is ONE; meaning only one node must acknowledge a write on a
+write request, and only one node must return a result set to satisfy a read request.
+
+Set your consistency level to TWO by executing the following command:
+CONSISTENCY TWO;
+NOTE: In this case, TWO is the same as ALL because our current replication settings store
+one replica per data center, and we have two data centers.
+
+ Determine which nodes hold the replicas for the cassandra partition tag value in the
+videos_by_tag table by executing the following command at the terminal prompt:
+/home/ubuntu/node1/resources/cassandra/bin/nodetool getendpoints
+killrvideo videos_by_tag 'cassandra'
+
+UPDATE killrvideo.videos_by_tag
+SET title = 'Me LovEEEEEEEE Cassandra'
+WHERE tag = 'cassandra' AND added_date = '2016-02-08' AND
+video_id = paste_your_video_id;
+
 
