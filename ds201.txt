@@ -400,6 +400,104 @@ If there were no commit log segments found during startup, no replay needs to be
 If Apache Cassandra™ finds commit log files, it will replay the mutations in those files
 into memtables and then flush the memtables to disk.
 
+2) Now force Apache Cassandra™ to flush its current memtable to disk by executing the following command: /home/ubuntu/node/resources/cassandra/bin/nodetool flush	
+	
+"In your terminal, navigate to the data directory for the large table that cassandrastress wrote. 
+Remember that cassandra-stress creates a keyspace called keyspace1 and a table called standard1. 
+You will find the directory as illustrated below, however, your table ID will differ. 
+Use the tab key in the terminal to use helpful autocompletion. 
 
+ubuntu@ds201-node1:~$ cd /home/ubuntu/node/data/data/keyspace1/standard1-9b3c...0e72657334 
+
+ubuntu@ds201- node1:/home/ubuntu/node/data/data/keyspace1/standard1- 9b3c...0e72657334$"	
+	
+"4) Use the following command to list the bloom filter files for your SSTables: 
+
+ls -lh *Filter.db"	
+	
+"5) Execute the following command to view the current bloom filter settings:
+DESCRIBE keyspace keyspace1;
+cqlsh> DESCRIBE keyspace keyspace1;
+CREATE KEYSPACE keyspace1 WITH replication = {'class':
+'SimpleStrategy', 'replication_factor': '1'} AND durable_writes
+= true;
+CREATE TABLE keyspace1.counter1 (
+ key blob,
+ column1 text,
+ ""C0"" counter static,
+ ""C1"" counter static,
+ ""C2"" counter static,
+ ""C3"" counter static,
+ ""C4"" counter static,
+ value counter,
+ PRIMARY KEY (key, column1)
+) WITH COMPACT STORAGE
+ AND CLUSTERING ORDER BY (column1 ASC)
+ AND bloom_filter_fp_chance = 0.01
+ ...
+ AND speculative_retry = '99PERCENTILE';
+CREATE TABLE keyspace1.standard1 (
+ key blob PRIMARY KEY,
+ ""C0"" blob,
+ ""C1"" blob,
+ ""C2"" blob,
+ ""C3"" blob,
+ ""C4"" blob
+) WITH COMPACT STORAGE
+ AND bloom_filter_fp_chance = 0.01
+ ...
+ AND speculative_retry = '99PERCENTILE';
+Note the bloom_filter_fp_chance is 0.01, meaning a 1% chance of a false positive.
+That's pretty good, but if we want an even smaller chance, we can trade space for it."	
+	
+
+
+Execute the following command:
+ALTER TABLE keyspace1.standard1 WITH bloom_filter_fp_chance = 0.0001;
+Now that we have changed the bloom_filter_fp_chance, we must update our
+SSTables and associated bloom filter files
+
+/home/ubuntu/node/resources/cassandra/bin/nodetool
+upgradesstables --include-all-sstables
+
+nodetool upgradesstables rebuilds SSTables for a specified keyspace and table.
+We are doing this here to rebuild the Bloom Filters also. Normally this command will
+only upgrade sstables if the sstables are not at the most recent SSTable version; the --
+include-all-sstables flag forces the rebuild to occur. Normally you would need to
+run nodetool upgradesstables on each node. For the purposes of this exercise, we
+only have one node.
+
+11) Now execute the following command in your terminal:
+/home/ubuntu/node/resources/cassandra/bin/nodetool cfstats keyspace1.standard1
+Part of the stats include bloom filter information. Since we have not read from the
+cassandra-stress tables, the values are all zero. However, you can use these stats to
+tune Apache Cassandra™ if necessary.
+ubuntu@ds201-node1:~$ /home/ubuntu/node/resources/cassandra/bin/nodetool
+cfstats keyspace1.standard1
+Total number of tables: 47
+
+
+Flush memtable to sstable:
+
+/home/ubuntu/node/bin/nodetool flush
+
+ Let's investigate the SSTable in the node's data directory. Remember the actual name of
+the directory will be a unique random value under
+/home/ubuntu/node/data/data/killrvideo:
+ls -l /home/ubuntu/node/data/data/killrvideo/videos_by_tag-*
+You will see several files with names that start with. These are the files associated with
+the first SSTable.
+
+) Insert a fourth row:
+INSERT INTO killrvideo.videos_by_tag (tag, added_date, video_id, title)
+ VALUES ('cassandra', dateof(now()), uuid(), 'Cassandra Ninja');
+11) Flush and investigate the data directory again. Wait a few seconds before executing
+each command.
+/home/ubuntu/node/bin/nodetool flush
+ls -l /home/ubuntu/node/data/data/killrvideo/videos_by_tag-*
+Notice that the three previous SSTable files are gone and a new set has appeared. Also,
+notice that the file names skipped from mc-3-big to mc-5-big. This new set is the
+result of the compaction. Apache Cassandra™ created the fourth SSTable and then
+compacted all four into a fifth SSTable.
 
 
